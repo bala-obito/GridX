@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GridX</title>
+<style>
+:root{
+  --bg:#05070d; --panel:#0c1220; --line:#1c2740;
+  --x:#00f0ff; --o:#ff2e88; --accent:#7c5cff;
+  --text:#e6ecff; --muted:#7a89b8;
+}
+:root:not([data-theme="light"]){}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  background:radial-gradient(1200px 800px at 50% -10%, #131c33 0%, var(--bg) 60%);
+  color:var(--text);
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  display:flex; align-items:center; justify-content:center;
+  min-height:100%; padding:24px;
+  padding-top:calc(24px + env(safe-area-inset-top,0px));
+  padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  overflow-x:hidden;
+}
+.wrap{width:100%; max-width:480px}
+.hidden{display:none !important}
+
+/* HOME */
+.home{
+  text-align:center; padding:12px 4px 4px;
+  animation:fadeIn .4s ease;
+}
+@keyframes fadeIn{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:translateY(0)}}
+.logo{
+  width:88px; height:88px; margin:0 auto 18px; position:relative;
+}
+.logo .g{
+  position:absolute; inset:0; display:grid; grid-template-columns:repeat(3,1fr); gap:4px;
+}
+.logo .g span{
+  border:1.5px solid var(--line); border-radius:6px; background:rgba(255,255,255,0.02);
+}
+.logo .g span:nth-child(1),.logo .g span:nth-child(5),.logo .g span:nth-child(9){
+  border-color:var(--x); box-shadow:0 0 10px rgba(0,240,255,0.5); color:var(--x);
+}
+.logo .g span:nth-child(3),.logo .g span:nth-child(5),.logo .g span:nth-child(7){
+  border-color:var(--o); box-shadow:0 0 10px rgba(255,46,136,0.5);
+}
+.home .title{margin-bottom:2px}
+.home .subtitle{margin-bottom:30px}
+.home .startBtn{
+  width:100%; padding:16px; border-radius:14px; border:none; font-size:16px; font-weight:800;
+  letter-spacing:1px; color:var(--bg); cursor:pointer; margin-bottom:12px;
+  background:linear-gradient(90deg,var(--x),var(--accent),var(--o)); background-size:200% auto;
+  box-shadow:0 10px 30px rgba(124,92,255,0.4); transition:.3s;
+}
+.home .startBtn:hover{background-position:right center; transform:translateY(-2px)}
+.home .homeModes{display:flex; gap:8px; margin-bottom:14px}
+.home .homeModes button{
+  flex:1; padding:14px 6px; border-radius:14px; border:1px solid var(--line);
+  background:rgba(255,255,255,0.03); color:var(--muted); font-weight:700; font-size:13px; cursor:pointer; transition:.2s;
+}
+.home .homeModes button.active{
+  color:var(--bg); background:linear-gradient(90deg,var(--x),var(--accent)); border-color:transparent;
+  box-shadow:0 0 20px rgba(124,92,255,0.5);
+}
+.backBtn{
+  background:none; border:1px solid var(--line); color:var(--muted); border-radius:10px;
+  padding:8px 12px; font-size:13px; cursor:pointer; margin-bottom:14px; transition:.2s;
+}
+.backBtn:hover{border-color:var(--accent); color:var(--text)}
+
+.title{
+  text-align:center; font-size:clamp(28px,7vw,40px); font-weight:800; letter-spacing:2px;
+  background:linear-gradient(90deg,var(--x),var(--accent),var(--o));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  margin-bottom:6px;
+}
+.subtitle{text-align:center; color:var(--muted); font-size:13px; letter-spacing:3px; text-transform:uppercase; margin-bottom:20px}
+
+.panel{
+  background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  border:1px solid var(--line); border-radius:18px; padding:18px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  backdrop-filter:blur(6px);
+}
+
+.modes{display:flex; gap:8px; margin-bottom:14px}
+.modes button{
+  flex:1; padding:10px 6px; border-radius:12px; border:1px solid var(--line);
+  background:rgba(255,255,255,0.02); color:var(--muted); font-weight:600; font-size:13px;
+  cursor:pointer; transition:.2s;
+}
+.modes button.active{
+  color:var(--bg); background:linear-gradient(90deg,var(--x),var(--accent));
+  border-color:transparent; box-shadow:0 0 20px rgba(124,92,255,0.5);
+}
+
+.diffRow{display:flex; gap:8px; margin-bottom:14px; overflow:hidden; max-height:0; transition:max-height .25s ease, margin .25s ease; opacity:0}
+.diffRow.show{max-height:60px; opacity:1}
+.diffRow button{
+  flex:1; padding:8px; border-radius:10px; border:1px solid var(--line);
+  background:rgba(255,255,255,0.02); color:var(--muted); font-size:12px; cursor:pointer; transition:.2s;
+}
+.diffRow button.active{color:var(--x); border-color:var(--x); box-shadow:0 0 12px rgba(0,240,255,0.3)}
+
+.scoreboard{display:flex; justify-content:space-between; gap:8px; margin-bottom:16px}
+.score{
+  flex:1; text-align:center; padding:10px 4px; border-radius:12px;
+  background:rgba(255,255,255,0.03); border:1px solid var(--line);
+}
+.score .who{font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase}
+.score .val{font-size:22px; font-weight:800; margin-top:2px}
+.score.x .val{color:var(--x)} .score.o .val{color:var(--o)} .score.d .val{color:var(--muted)}
+.score.turn{box-shadow:0 0 0 2px var(--accent) inset; transform:scale(1.03)}
+
+.status{text-align:center; min-height:26px; margin-bottom:14px; font-size:15px; font-weight:600; color:var(--accent); letter-spacing:.5px}
+
+.board{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
+  aspect-ratio:1/1; margin-bottom:16px;
+}
+.cell{
+  background:var(--panel); border:1px solid var(--line); border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:clamp(36px,10vw,54px); font-weight:800; cursor:pointer;
+  position:relative; overflow:hidden; transition:transform .12s, border-color .2s;
+}
+.cell:hover:not(.filled):not(.locked){border-color:var(--accent); transform:translateY(-2px)}
+.cell.x{color:var(--x); text-shadow:0 0 18px rgba(0,240,255,0.7)}
+.cell.o{color:var(--o); text-shadow:0 0 18px rgba(255,46,136,0.7)}
+.cell.win{background:linear-gradient(180deg, rgba(124,92,255,0.18), rgba(124,92,255,0.05)); border-color:var(--accent)}
+.cell.pop{animation:pop .25s ease}
+@keyframes pop{from{transform:scale(0.4); opacity:0}to{transform:scale(1); opacity:1}}
+
+.actions{display:flex; gap:8px}
+.actions button{
+  flex:1; padding:12px; border-radius:12px; border:1px solid var(--line);
+  background:rgba(255,255,255,0.03); color:var(--text); font-weight:700; font-size:14px; cursor:pointer;
+  transition:.2s;
+}
+.actions button:hover{border-color:var(--accent); box-shadow:0 0 16px rgba(124,92,255,0.35)}
+.actions button.primary{
+  background:linear-gradient(90deg,var(--x),var(--accent)); color:var(--bg); border-color:transparent;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="home" class="view home">
+    <div class="logo"><div class="g">
+      <span></span><span></span><span>X</span>
+      <span></span><span>O</span><span></span>
+      <span>X</span><span></span><span></span>
+    </div></div>
+    <div class="title">GRID X</div>
+    <div class="subtitle">Neon Grid Protocol</div>
+    <div class="homeModes">
+      <button id="homeModeCpu" class="active">Vs Computer</button>
+      <button id="homeModePvp">2 Players</button>
+    </div>
+    <div class="diffRow show" id="homeDiffRow">
+      <button data-d="easy">Easy</button>
+      <button data-d="medium">Medium</button>
+      <button data-d="hard" class="active">Unbeatable</button>
+    </div>
+    <button class="startBtn" id="startBtn">▶ ENTER THE GRID</button>
+  </div>
+
+  <div id="game" class="view hidden">
+    <button class="backBtn" id="backBtn">← Home</button>
+    <div class="title">GRID X</div>
+    <div class="subtitle">Neon Grid Protocol</div>
+    <div class="panel">
+      <div class="scoreboard">
+        <div class="score x" id="scoreX"><div class="who">X</div><div class="val">0</div></div>
+        <div class="score d" id="scoreD"><div class="who">Draw</div><div class="val">0</div></div>
+        <div class="score o" id="scoreO"><div class="who" id="oLabel">O · CPU</div><div class="val">0</div></div>
+      </div>
+      <div class="status" id="status">Your move, X</div>
+      <div class="board" id="board"></div>
+      <div class="actions">
+        <button id="resetRound">↻ New Round</button>
+        <button id="resetAll" class="primary">Reset Match</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const boardEl = document.getElementById('board');
+const statusEl = document.getElementById('status');
+const homeModeCpu = document.getElementById('homeModeCpu');
+const homeModePvp = document.getElementById('homeModePvp');
+const homeDiffRow = document.getElementById('homeDiffRow');
+const oLabel = document.getElementById('oLabel');
+const homeView = document.getElementById('home');
+const gameView = document.getElementById('game');
+const startBtn = document.getElementById('startBtn');
+const backBtn = document.getElementById('backBtn');
+const scoreXEl = document.querySelector('#scoreX .val');
+const scoreOEl = document.querySelector('#scoreO .val');
+const scoreDEl = document.querySelector('#scoreD .val');
+const scoreXBox = document.getElementById('scoreX');
+const scoreOBox = document.getElementById('scoreO');
+
+let cells = Array(9).fill(null);
+let current = 'X';
+let vsCpu = true;
+let difficulty = 'hard';
+let locked = false;
+let scores = {X:0, O:0, D:0};
+
+const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+function buildBoard(){
+  boardEl.innerHTML='';
+  cells.forEach((v,i)=>{
+    const c = document.createElement('div');
+    c.className='cell'; c.dataset.i=i;
+    c.addEventListener('click', ()=>handleMove(i));
+    boardEl.appendChild(c);
+  });
+}
+buildBoard();
+
+function render(winLine){
+  [...boardEl.children].forEach((c,i)=>{
+    c.classList.toggle('x', cells[i]==='X');
+    c.classList.toggle('o', cells[i]==='O');
+    c.classList.toggle('filled', !!cells[i]);
+    c.classList.toggle('locked', locked);
+    c.classList.toggle('win', !!winLine && winLine.includes(i));
+    c.textContent = cells[i] || '';
+  });
+  scoreXBox.classList.toggle('turn', current==='X' && !locked);
+  scoreOBox.classList.toggle('turn', current==='O' && !locked);
+}
+
+function checkWin(bd){
+  for(const [a,b,c] of WINS){
+    if(bd[a] && bd[a]===bd[b] && bd[b]===bd[c]) return [a,b,c];
+  }
+  return null;
+}
+function checkDraw(bd){ return bd.every(v=>v); }
+
+function handleMove(i){
+  if(locked || cells[i]) return;
+  cells[i]=current;
+  const win = checkWin(cells);
+  const cell = boardEl.children[i];
+  cell.classList.add('pop');
+  if(win){
+    locked=true; render(win);
+    scores[current]++; updateScores();
+    statusEl.textContent = `${current} wins the round!`;
+    return;
+  }
+  if(checkDraw(cells)){
+    locked=true; render(null);
+    scores.D++; updateScores();
+    statusEl.textContent = `It's a draw.`;
+    return;
+  }
+  current = current==='X' ? 'O' : 'X';
+  render(null);
+  statusEl.textContent = vsCpu && current==='O' ? 'CPU is thinking...' : `Your move, ${current}`;
+  if(vsCpu && current==='O'){
+    locked=true;
+    setTimeout(()=>{ locked=false; cpuMove(); }, 420);
+  }
+}
+
+function updateScores(){
+  scoreXEl.textContent = scores.X;
+  scoreOEl.textContent = scores.O;
+  scoreDEl.textContent = scores.D;
+}
+
+function emptyIndices(bd){ return bd.map((v,i)=>v?null:i).filter(v=>v!==null); }
+
+function minimax(bd, player){
+  const win = checkWin(bd);
+  if(win) return {score: bd[win[0]]==='O' ? 10 : -10};
+  if(checkDraw(bd)) return {score:0};
+  const moves=[];
+  for(const i of emptyIndices(bd)){
+    const newBd = bd.slice(); newBd[i]=player;
+    const result = minimax(newBd, player==='O'?'X':'O');
+    moves.push({index:i, score:result.score});
+  }
+  if(player==='O'){
+    return moves.reduce((best,m)=> m.score>best.score?m:best, {score:-Infinity});
+  } else {
+    return moves.reduce((best,m)=> m.score<best.score?m:best, {score:Infinity});
+  }
+}
+
+function cpuMove(){
+  if(locked || checkWin(cells) || checkDraw(cells)) return;
+  const empties = emptyIndices(cells);
+  let idx;
+  if(difficulty==='easy'){
+    idx = empties[Math.floor(Math.random()*empties.length)];
+  } else if(difficulty==='medium'){
+    idx = Math.random() < 0.5 ? minimax(cells.slice(),'O').index : empties[Math.floor(Math.random()*empties.length)];
+  } else {
+    idx = minimax(cells.slice(),'O').index;
+  }
+  handleMove(idx);
+}
+
+function newRound(){
+  cells = Array(9).fill(null);
+  current='X'; locked=false;
+  render(null);
+  statusEl.textContent = `Your move, X`;
+}
+
+function resetAll(){
+  scores={X:0,O:0,D:0}; updateScores();
+  newRound();
+}
+
+document.getElementById('resetRound').addEventListener('click', newRound);
+document.getElementById('resetAll').addEventListener('click', resetAll);
+
+homeModeCpu.addEventListener('click', ()=>{
+  vsCpu=true; homeModeCpu.classList.add('active'); homeModePvp.classList.remove('active');
+  homeDiffRow.classList.add('show'); oLabel.textContent='O · CPU';
+});
+homeModePvp.addEventListener('click', ()=>{
+  vsCpu=false; homeModePvp.classList.add('active'); homeModeCpu.classList.remove('active');
+  homeDiffRow.classList.remove('show'); oLabel.textContent='O · P2';
+});
+homeDiffRow.addEventListener('click', (e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  [...homeDiffRow.children].forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  difficulty = btn.dataset.d;
+});
+
+startBtn.addEventListener('click', ()=>{
+  homeView.classList.add('hidden');
+  gameView.classList.remove('hidden');
+  resetAll();
+});
+backBtn.addEventListener('click', ()=>{
+  gameView.classList.add('hidden');
+  homeView.classList.remove('hidden');
+});
+
+render(null);
+</script>
+</body>
+</html>
