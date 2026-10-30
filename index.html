@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GridX – Liquid Gold Tic-Tac-Toe</title>
+<meta name="description" content="GridX is a liquid glass tic-tac-toe game. Play the unbeatable computer or challenge a friend.">
+<meta name="author" content="Balamurugan">
+<meta name="theme-color" content="#050505">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2305070d'/%3E%3Cpath d='M24 24l24 24M48 24L24 48' stroke='%23ffcf5a' stroke-width='9' stroke-linecap='round'/%3E%3Ccircle cx='68' cy='68' r='15' fill='none' stroke='%23f6efe2' stroke-width='9'/%3E%3C/svg%3E">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#050505; --panel:#0c1220; --line:#1c2740;
+  --x:#00f0ff; --o:#ff2e88; --accent:#7c5cff;
+  --text:#e6ecff; --muted:#8190bd;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  background:radial-gradient(1200px 800px at 50% -10%, #131c33 0%, var(--bg) 60%) fixed;
+  color:var(--text);
+  font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+  display:flex; align-items:center; justify-content:center;
+  min-height:100%; padding:24px;
+  padding-top:calc(24px + env(safe-area-inset-top,0px));
+  padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  overflow-x:hidden; position:relative;
+  -webkit-tap-highlight-color:transparent;
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; opacity:.35;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000 0%,transparent 70%);
+  mask-image:radial-gradient(ellipse at 50% 40%,#000 0%,transparent 70%);
+}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--x); outline-offset:3px}
+.wrap{width:100%; max-width:440px; position:relative}
+.hidden{display:none !important}
+
+/* ---------- HOME ---------- */
+.home{text-align:center; animation:fadeIn .45s ease}
+@keyframes fadeIn{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+
+.logo{width:96px; height:96px; margin:0 auto 20px}
+.logo .g{display:grid; grid-template-columns:repeat(3,1fr); gap:5px; width:100%; height:100%}
+.logo .g span{
+  display:flex; align-items:center; justify-content:center;
+  border:1.5px solid var(--line); border-radius:8px; background:rgba(255,255,255,.02);
+  font-weight:800; font-size:22px; line-height:1; opacity:0;
+  animation:logoIn .4s ease forwards;
+}
+.logo .g span:nth-child(1){animation-delay:.05s}
+.logo .g span:nth-child(2){animation-delay:.10s}
+.logo .g span:nth-child(3){animation-delay:.15s}
+.logo .g span:nth-child(4){animation-delay:.20s}
+.logo .g span:nth-child(5){animation-delay:.25s}
+.logo .g span:nth-child(6){animation-delay:.30s}
+.logo .g span:nth-child(7){animation-delay:.35s}
+.logo .g span:nth-child(8){animation-delay:.40s}
+.logo .g span:nth-child(9){animation-delay:.45s}
+@keyframes logoIn{from{opacity:0; transform:scale(.6)}to{opacity:1; transform:scale(1)}}
+.logo .g .lx{color:var(--x); border-color:var(--x); box-shadow:0 0 12px rgba(0,240,255,.45)}
+.logo .g .lo{color:var(--o); border-color:var(--o); box-shadow:0 0 12px rgba(255,46,136,.45)}
+
+.title{
+  text-align:center; font-size:clamp(34px,9vw,46px); font-weight:800; letter-spacing:3px; line-height:1.1;
+  background:linear-gradient(90deg,var(--x),var(--accent),var(--o));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.subtitle{text-align:center; color:var(--muted); font-size:14px; letter-spacing:.5px; margin-top:8px}
+.home .subtitle{margin-bottom:28px}
+.game .subtitle{margin-bottom:18px}
+
+.field{text-align:left; margin-bottom:16px}
+.field > .label{display:block; font-size:12px; color:var(--muted); margin:0 2px 8px; font-weight:600}
+.seg{display:flex; gap:6px; padding:5px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.03)}
+.seg button{
+  flex:1; padding:12px 6px; border-radius:10px; border:none; background:transparent;
+  color:var(--muted); font-weight:700; font-size:14px; cursor:pointer; transition:.2s;
+}
+.seg button:hover{color:var(--text)}
+.seg button.active{
+  color:var(--bg); background:linear-gradient(90deg,var(--x),var(--accent));
+  box-shadow:0 0 18px rgba(124,92,255,.45);
+}
+.collapse{display:grid; grid-template-rows:1fr; transition:grid-template-rows .3s ease, opacity .3s ease, margin .3s ease; opacity:1}
+.collapse > div{overflow:hidden; min-height:0}
+.collapse.off{grid-template-rows:0fr; opacity:0; margin-bottom:-16px; pointer-events:none}
+.hint{font-size:12.5px; color:var(--muted); margin:8px 2px 0; min-height:18px}
+
+.startBtn{
+  width:100%; padding:17px; border-radius:14px; border:none; font-size:16px; font-weight:800;
+  letter-spacing:1.5px; color:var(--bg); cursor:pointer; margin-top:6px;
+  background:linear-gradient(90deg,var(--x),var(--accent),var(--o)); background-size:200% auto;
+  box-shadow:0 10px 30px rgba(124,92,255,.4); transition:background-position .4s, transform .2s, box-shadow .2s;
+}
+.startBtn:hover{background-position:right center; transform:translateY(-2px); box-shadow:0 14px 34px rgba(124,92,255,.5)}
+.startBtn:active{transform:translateY(0) scale(.99)}
+
+.gh{
+  display:inline-flex; align-items:center; gap:9px; margin-top:22px; padding:9px 16px;
+  border:1px solid var(--line); border-radius:999px; color:var(--muted); text-decoration:none;
+  font-size:13px; background:rgba(255,255,255,.03); transition:.2s;
+}
+.gh svg{width:18px; height:18px; fill:currentColor; flex:none}
+.gh b{color:var(--text); font-weight:700}
+.gh:hover{border-color:var(--accent); color:var(--text); box-shadow:0 0 16px rgba(124,92,255,.35); transform:translateY(-1px)}
+.footer{text-align:center}
+
+/* ---------- GAME ---------- */
+.topbar{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px}
+.backBtn{
+  background:none; border:1px solid var(--line); color:var(--muted); border-radius:10px;
+  padding:8px 12px; font-size:13px; cursor:pointer; transition:.2s;
+}
+.backBtn:hover{border-color:var(--accent); color:var(--text)}
+.badge{font-size:12px; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:6px 12px; background:rgba(255,255,255,.03)}
+
+.panel{
+  background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  border:1px solid var(--line); border-radius:18px; padding:18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5); backdrop-filter:blur(6px);
+}
+.scoreboard{display:flex; gap:8px; margin-bottom:16px}
+.score{
+  flex:1; text-align:center; padding:10px 4px; border-radius:12px;
+  background:rgba(255,255,255,.03); border:1px solid var(--line); transition:.2s;
+}
+.score .who{font-size:12px; color:var(--muted); letter-spacing:.5px}
+.score .val{font-size:24px; font-weight:800; margin-top:2px}
+.score.x .val{color:var(--x)} .score.o .val{color:var(--o)} .score.d .val{color:var(--muted)}
+.score.turn{box-shadow:0 0 0 2px var(--accent) inset; transform:scale(1.03)}
+
+.status{text-align:center; min-height:26px; margin-bottom:14px; font-size:16px; font-weight:600; color:var(--accent)}
+.status.win{color:var(--x)}
+
+.board{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; aspect-ratio:1/1; margin-bottom:16px}
+.cell{
+  background:var(--panel); border:1px solid var(--line); border-radius:14px; color:var(--text);
+  display:flex; align-items:center; justify-content:center; padding:0;
+  font-size:clamp(38px,11vw,56px); font-weight:800; cursor:pointer;
+  transition:transform .12s, border-color .2s, background .2s;
+}
+.cell:hover:not(.filled):not(.locked){border-color:var(--accent); transform:translateY(-2px)}
+.cell.filled,.cell.locked{cursor:default}
+.cell.x{color:var(--x); text-shadow:0 0 18px rgba(0,240,255,.7)}
+.cell.o{color:var(--o); text-shadow:0 0 18px rgba(255,46,136,.7)}
+.cell.win{background:linear-gradient(180deg, rgba(124,92,255,.22), rgba(124,92,255,.06)); border-color:var(--accent)}
+.cell.pop{animation:pop .25s ease}
+@keyframes pop{from{transform:scale(.4); opacity:0}to{transform:scale(1); opacity:1}}
+
+.actions{display:flex; gap:8px}
+.actions button{
+  flex:1; padding:13px; border-radius:12px; border:1px solid var(--line);
+  background:rgba(255,255,255,.03); color:var(--text); font-weight:700; font-size:14px; cursor:pointer; transition:.2s;
+}
+.actions button:hover{border-color:var(--accent); box-shadow:0 0 16px rgba(124,92,255,.35)}
+.actions button.primary{background:linear-gradient(90deg,var(--x),var(--accent)); color:var(--bg); border-color:transparent}
+.actions button.nudge{animation:nudge 1.4s ease-in-out infinite}
+@keyframes nudge{0%,100%{box-shadow:0 0 0 0 rgba(0,240,255,.0)}50%{box-shadow:0 0 18px 2px rgba(0,240,255,.45)}}
+.game .footer{margin-top:4px}
+.game .gh{margin-top:18px}
+
+@media (max-width:360px){
+  body{padding:16px}
+  .panel{padding:14px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
+  .logo .g span{opacity:1}
+}
+/* ===== LIQUID GLASS · GOLD & BLACK ===== */
+@property --g{syntax:'<number>';inherits:false;initial-value:0}
+:root{--bg:#050505;--panel:#0a0906;--line:rgba(255,214,120,.16);--x:#ffcf5a;--o:#f6efe2;--accent:#f5c451;--text:#fbf3e0;--muted:#a89a78;
+--gold:linear-gradient(145deg,#fff0b8 0%,#f5c451 48%,#b8860b 100%);--spring:cubic-bezier(.34,1.56,.64,1);--ease:cubic-bezier(.22,1,.36,1)}
+body{background:radial-gradient(1100px 700px at 50% -10%,#241a08 0%,#080705 55%,#030303 100%) fixed}
+body::before{opacity:1;background:radial-gradient(520px circle at var(--px,50%) var(--py,30%),rgba(255,200,80,.13),transparent 62%);-webkit-mask-image:none;mask-image:none;z-index:0}
+.wrap{z-index:1}
+:focus-visible{outline-color:var(--accent)}
+.orbs{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+.orbs i{position:absolute;width:46vmax;height:46vmax;max-width:560px;max-height:560px;opacity:.5;will-change:transform;
+background:radial-gradient(circle at 35% 35%,rgba(255,214,110,.9),rgba(200,140,20,.45) 45%,transparent 70%);animation:blob 18s ease-in-out infinite}
+.orbs i:nth-child(1){top:-12%;left:-10%}
+.orbs i:nth-child(2){bottom:-14%;right:-12%;opacity:.4;animation-duration:23s;animation-delay:-6s}
+.orbs i:nth-child(3){top:40%;left:55%;width:26vmax;height:26vmax;opacity:.32;animation-duration:15s;animation-delay:-11s;
+background:radial-gradient(circle at 40% 40%,rgba(255,244,200,.85),rgba(245,196,81,.4) 50%,transparent 72%)}
+@keyframes blob{0%,100%{transform:translate(0,0) rotate(0) scale(1);border-radius:60% 40% 55% 45%/50% 60% 40% 50%}
+33%{transform:translate(8vw,6vh) rotate(60deg) scale(1.12);border-radius:40% 60% 45% 55%/60% 40% 60% 40%}
+66%{transform:translate(-5vw,10vh) rotate(130deg) scale(.94);border-radius:55% 45% 60% 40%/40% 55% 45% 60%}}
+
+/* glass surfaces */
+.home,.panel,.cell,.score,.seg,.badge,.backBtn,.gh,.actions button{
+position:relative;overflow:hidden;isolation:isolate;--g:0;
+background:radial-gradient(190px circle at var(--mx,50%) var(--my,0%),rgba(255,226,150,calc(var(--g)*.30)),transparent 65%),
+linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.025) 45%,rgba(255,196,70,.07));
+border:1px solid rgba(255,214,120,.2);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -1px 1px rgba(255,190,60,.2),inset 0 0 24px rgba(255,200,90,.05),0 12px 32px rgba(0,0,0,.5);
+transition:--g .4s var(--ease),transform .5s var(--spring),border-radius .6s var(--spring),border-color .3s,box-shadow .4s var(--ease),background-color .3s}
+.home,.panel,.badge,.backBtn,.gh{-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%)}
+.home{padding:34px 26px 26px;border-radius:34px;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -1px 2px rgba(255,190,60,.25),inset 0 0 40px rgba(255,200,90,.06),0 30px 80px rgba(0,0,0,.65);animation:glassIn .9s var(--ease) both}
+.panel{border-radius:30px;padding:20px;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -1px 2px rgba(255,190,60,.25),inset 0 0 40px rgba(255,200,90,.06),0 30px 80px rgba(0,0,0,.65)}
+.home::before,.panel::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+background:linear-gradient(115deg,transparent 38%,rgba(255,236,180,.11) 50%,transparent 62%);background-size:300% 100%;animation:sweep 9s ease-in-out infinite}
+@keyframes sweep{0%{background-position:120% 0}60%,100%{background-position:-120% 0}}
+@keyframes glassIn{from{opacity:0;transform:translateY(18px) scale(.97);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
+.game{animation:glassIn .8s var(--ease) both}
+.topbar .backBtn,.badge{border-radius:999px;padding:8px 14px;color:var(--text)}
+.backBtn{cursor:pointer}
+.gh{border-radius:999px;color:var(--muted)}
+.gh:hover,.backBtn:hover,.actions button:hover{border-color:rgba(255,224,138,.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 28px rgba(245,196,81,.3),0 12px 32px rgba(0,0,0,.5);transform:translateY(-2px)}
+.home:hover,.panel:hover,.score:hover,.gh:hover,.backBtn:hover,.actions button:hover{--g:1}
+
+/* text */
+.title{background:linear-gradient(100deg,#b8860b,#fff0b8 25%,#f5c451 50%,#fff6d0 75%,#b8860b);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
+letter-spacing:7px;animation:shine 6s linear infinite;filter:drop-shadow(0 0 18px rgba(245,196,81,.35))}
+@keyframes shine{to{background-position:200% center}}
+.subtitle{color:var(--muted)}
+.field > .label{color:#c9b98f;letter-spacing:.6px}
+.hint{color:var(--muted)}
+
+/* logo */
+.logo{animation:float 6s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-7px)}}
+.logo .g span{border-radius:12px;border:1px solid rgba(255,214,120,.25);background:linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.03));box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+.logo .g .lx{color:var(--x);border-color:rgba(255,207,90,.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 16px rgba(255,190,50,.4)}
+.logo .g .lo{color:var(--o);border-color:rgba(246,239,226,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 16px rgba(255,255,255,.25)}
+
+/* segmented */
+.seg{border-radius:20px;padding:5px;box-shadow:inset 0 2px 8px rgba(0,0,0,.45),inset 0 -1px 0 rgba(255,214,120,.14)}
+.seg button{position:relative;overflow:hidden;border-radius:15px;transition:color .3s,background .4s var(--ease),box-shadow .4s var(--ease),transform .5s var(--spring)}
+.seg button:hover{color:var(--text)}
+.seg button:active{transform:scale(.95)}
+.seg button.active{color:#1a1200;background:var(--gold);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -2px 4px rgba(120,80,0,.35),0 6px 22px rgba(245,196,81,.4)}
+
+/* gold liquid buttons */
+.startBtn,.actions button.primary{position:relative;overflow:hidden;border:1px solid rgba(255,240,184,.55);color:#1a1200;
+background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.65) 50%,transparent 65%) 150% 0/250% 100% no-repeat,var(--gold);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 -3px 6px rgba(120,80,0,.35),0 12px 34px rgba(245,196,81,.35);
+transition:background-position 1s var(--ease),transform .5s var(--spring),box-shadow .4s var(--ease),border-radius .6s var(--spring)}
+.startBtn{border-radius:20px;letter-spacing:2px}
+.startBtn:hover,.actions button.primary:hover{background-position:-50% 0,0 0;transform:translateY(-3px) scale(1.015);border-radius:24px 18px 24px 18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.85),inset 0 -3px 6px rgba(120,80,0,.35),0 18px 44px rgba(245,196,81,.5)}
+.startBtn:active,.actions button:active{transform:scale(.96)}
+.actions button{border-radius:18px;color:var(--text)}
+.actions button.primary{color:#1a1200}
+.actions button.nudge{animation:nudge 1.6s ease-in-out infinite}
+@keyframes nudge{50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 0 36px 4px rgba(255,214,110,.6)}}
+
+/* scoreboard */
+.score{border-radius:18px;padding:11px 4px}
+.score.x .val{color:var(--x);text-shadow:0 0 16px rgba(255,190,50,.6)}
+.score.o .val{color:var(--o);text-shadow:0 0 14px rgba(255,255,255,.35)}
+.score.turn{transform:scale(1.05);border-color:rgba(255,224,138,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 26px rgba(245,196,81,.4),0 12px 32px rgba(0,0,0,.5)}
+.status{color:#e8cf8c;transition:color .4s,text-shadow .4s}
+.status.win{color:#ffe08a;text-shadow:0 0 18px rgba(255,200,70,.7)}
+
+/* board */
+.board{gap:10px}
+.cell{border-radius:22px;color:var(--text)}
+.cell:hover:not(.filled):not(.locked){--g:1;border-color:rgba(255,224,138,.65);transform:translateY(-3px) scale(1.04);border-radius:28px 18px 26px 20px;
+box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 0 30px rgba(245,196,81,.28),0 14px 30px rgba(0,0,0,.5)}
+.cell:active:not(.filled):not(.locked){transform:scale(.93)}
+.cell.x{color:var(--x);text-shadow:0 0 22px rgba(255,190,50,.8),0 0 2px rgba(255,255,255,.5)}
+.cell.o{color:var(--o);text-shadow:0 0 20px rgba(255,255,255,.5)}
+.cell.win{background:linear-gradient(145deg,rgba(255,232,160,.42),rgba(245,196,81,.12));border-color:#ffe08a;animation:win 1.7s ease-in-out infinite}
+@keyframes win{50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 38px rgba(255,200,70,.65),0 12px 30px rgba(0,0,0,.5);transform:scale(1.04)}}
+.cell.pop{animation:pop .55s var(--spring)}
+@keyframes pop{from{transform:scale(.3);opacity:0;filter:blur(6px)}to{transform:scale(1);opacity:1;filter:none}}
+
+.rip{position:absolute;width:22px;height:22px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(255,232,170,.6),transparent 65%);transform:translate(-50%,-50%) scale(0);animation:rip .8s var(--ease) forwards}
+@keyframes rip{to{transform:translate(-50%,-50%) scale(14);opacity:0}}
+@media (prefers-reduced-motion:reduce){.orbs i,.title,.logo{animation:none !important}}
+</style>
+</head>
+<body>
+<div class="orbs" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="wrap">
+
+  <!-- HOME -->
+  <main id="home" class="view home">
+    <div class="logo" aria-hidden="true"><div class="g">
+      <span class="lx">X</span><span></span><span class="lo">O</span>
+      <span></span><span class="lx">X</span><span></span>
+      <span class="lo">O</span><span></span><span class="lx">X</span>
+    </div></div>
+    <h1 class="title">GRIDX</h1>
+    <p class="subtitle">Liquid gold tic-tac-toe. Three in a row wins.</p>
+
+    <div class="field">
+      <span class="label" id="modeLabel">Game mode</span>
+      <div class="seg" role="group" aria-labelledby="modeLabel">
+        <button id="homeModeCpu" class="active" aria-pressed="true">Vs computer</button>
+        <button id="homeModePvp" aria-pressed="false">2 players</button>
+      </div>
+    </div>
+
+    <div class="collapse" id="homeDiffWrap">
+      <div>
+        <div class="field">
+          <span class="label" id="diffLabel">Difficulty</span>
+          <div class="seg" id="homeDiffRow" role="group" aria-labelledby="diffLabel">
+            <button data-d="easy" aria-pressed="false">Easy</button>
+            <button data-d="medium" aria-pressed="false">Medium</button>
+            <button data-d="hard" class="active" aria-pressed="true">Unbeatable</button>
+          </div>
+          <p class="hint" id="diffHint" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+
+    <button class="startBtn" id="startBtn">▶ ENTER THE GRID</button>
+
+    <div class="footer">
+      <a class="gh" href="https://github.com/bala-obito" target="_blank" rel="noopener noreferrer" aria-label="Open Bala on GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5Z"/></svg>
+        <span>Made by <b>Balamurugan</b></span>
+      </a>
+    </div>
+  </main>
+
+  <!-- GAME -->
+  <section id="game" class="view game hidden">
+    <div class="topbar">
+      <button class="backBtn" id="backBtn">← Home</button>
+      <span class="badge" id="modeBadge">Vs computer · Unbeatable</span>
+    </div>
+    <h2 class="title">GRIDX</h2>
+    <p class="subtitle">Get three in a row.</p>
+    <div class="panel">
+      <div class="scoreboard">
+        <div class="score x" id="scoreX"><div class="who" id="xLabel">X · You</div><div class="val">0</div></div>
+        <div class="score d" id="scoreD"><div class="who">Draw</div><div class="val">0</div></div>
+        <div class="score o" id="scoreO"><div class="who" id="oLabel">O · CPU</div><div class="val">0</div></div>
+      </div>
+      <div class="status" id="status" role="status" aria-live="polite">Your move</div>
+      <div class="board" id="board" role="grid" aria-label="Tic-tac-toe board"></div>
+      <div class="actions">
+        <button id="resetRound">↻ New round</button>
+        <button id="resetAll" class="primary">Reset match</button>
+      </div>
+    </div>
+    <div class="footer">
+      <a class="gh" href="https://github.com/bala-obito" target="_blank" rel="noopener noreferrer" aria-label="Open Bala on GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.04 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5Z"/></svg>
+        <span>Made by <b>Balamurugan</b></span>
+      </a>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const boardEl = $('board'), statusEl = $('status');
+const homeModeCpu = $('homeModeCpu'), homeModePvp = $('homeModePvp');
+const homeDiffWrap = $('homeDiffWrap'), homeDiffRow = $('homeDiffRow'), diffHint = $('diffHint');
+const xLabel = $('xLabel'), oLabel = $('oLabel'), modeBadge = $('modeBadge');
+const homeView = $('home'), gameView = $('game');
+const resetRoundBtn = $('resetRound');
+const scoreXEl = document.querySelector('#scoreX .val');
+const scoreOEl = document.querySelector('#scoreO .val');
+const scoreDEl = document.querySelector('#scoreD .val');
+const scoreXBox = $('scoreX'), scoreOBox = $('scoreO');
+
+const DIFF_NAMES = {easy:'Easy', medium:'Medium', hard:'Unbeatable'};
+const DIFF_HINTS = {
+  easy:'The computer plays at random. Good for a warm-up.',
+  medium:'The computer plays well about half the time.',
+  hard:'The computer never loses. Your best result is a draw.'
+};
+
+let cells = Array(9).fill(null);
+let current = 'X';
+let vsCpu = true;
+let difficulty = 'hard';
+let locked = false;
+let over = false;
+let cpuTimer = null;
+let scores = {X:0, O:0, D:0};
+
+const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+function buildBoard(){
+  boardEl.innerHTML = '';
+  cells.forEach((v,i)=>{
+    const c = document.createElement('button');
+    c.type = 'button';
+    c.className = 'cell';
+    c.setAttribute('aria-label', `Row ${Math.floor(i/3)+1}, column ${i%3+1}, empty`);
+    c.addEventListener('click', ()=>handleMove(i));
+    boardEl.appendChild(c);
+  });
+}
+buildBoard();
+
+function render(winLine){
+  [...boardEl.children].forEach((c,i)=>{
+    const v = cells[i];
+    c.classList.toggle('x', v==='X');
+    c.classList.toggle('o', v==='O');
+    c.classList.toggle('filled', !!v);
+    c.classList.toggle('locked', locked);
+    c.classList.toggle('win', !!winLine && winLine.includes(i));
+    if(!v) c.classList.remove('pop');
+    c.textContent = v || '';
+    c.setAttribute('aria-label', `Row ${Math.floor(i/3)+1}, column ${i%3+1}, ${v || 'empty'}`);
+  });
+  scoreXBox.classList.toggle('turn', current==='X' && !over);
+  scoreOBox.classList.toggle('turn', current==='O' && !over);
+  resetRoundBtn.classList.toggle('nudge', over);
+}
+
+function checkWin(bd){
+  for(const [a,b,c] of WINS){
+    if(bd[a] && bd[a]===bd[b] && bd[b]===bd[c]) return [a,b,c];
+  }
+  return null;
+}
+function checkDraw(bd){ return bd.every(v=>v); }
+
+function turnText(){
+  if(vsCpu) return current==='X' ? 'Your move' : 'CPU is thinking…';
+  return `${current}’s turn`;
+}
+
+function winText(p){
+  if(!vsCpu) return `${p} wins the round!`;
+  return p==='X' ? 'You win this round!' : 'CPU wins this round.';
+}
+
+function cancelCpu(){
+  if(cpuTimer){ clearTimeout(cpuTimer); cpuTimer = null; }
+}
+
+function handleMove(i){
+  if(locked || over || cells[i]) return;
+  cells[i] = current;
+  boardEl.children[i].classList.add('pop');
+  const win = checkWin(cells);
+  if(win){
+    over = true; locked = true; render(win);
+    scores[current]++; updateScores();
+    statusEl.textContent = winText(current);
+    statusEl.classList.add('win');
+    return;
+  }
+  if(checkDraw(cells)){
+    over = true; locked = true; render(null);
+    scores.D++; updateScores();
+    statusEl.textContent = "It’s a draw.";
+    return;
+  }
+  current = current==='X' ? 'O' : 'X';
+  const cpuTurn = vsCpu && current==='O';
+  locked = cpuTurn;
+  render(null);
+  statusEl.textContent = turnText();
+  if(cpuTurn){
+    cancelCpu();
+    cpuTimer = setTimeout(()=>{ cpuTimer = null; locked = false; cpuMove(); }, 420);
+  }
+}
+
+function updateScores(){
+  scoreXEl.textContent = scores.X;
+  scoreOEl.textContent = scores.O;
+  scoreDEl.textContent = scores.D;
+}
+
+function emptyIndices(bd){ return bd.map((v,i)=>v?null:i).filter(v=>v!==null); }
+
+function minimax(bd, player){
+  const win = checkWin(bd);
+  if(win) return {score: bd[win[0]]==='O' ? 10 : -10};
+  if(checkDraw(bd)) return {score:0};
+  const moves = [];
+  for(const i of emptyIndices(bd)){
+    const nb = bd.slice(); nb[i] = player;
+    moves.push({index:i, score:minimax(nb, player==='O'?'X':'O').score});
+  }
+  return player==='O'
+    ? moves.reduce((b,m)=> m.score>b.score?m:b, {score:-Infinity})
+    : moves.reduce((b,m)=> m.score<b.score?m:b, {score:Infinity});
+}
+
+function cpuMove(){
+  if(over || checkWin(cells) || checkDraw(cells)) return;
+  const empties = emptyIndices(cells);
+  const random = ()=> empties[Math.floor(Math.random()*empties.length)];
+  let idx;
+  if(difficulty==='easy') idx = random();
+  else if(difficulty==='medium') idx = Math.random()<0.5 ? minimax(cells.slice(),'O').index : random();
+  else idx = minimax(cells.slice(),'O').index;
+  handleMove(idx);
+}
+
+function newRound(){
+  cancelCpu();
+  cells = Array(9).fill(null);
+  current = 'X'; locked = false; over = false;
+  statusEl.classList.remove('win');
+  render(null);
+  statusEl.textContent = turnText();
+}
+
+function resetAll(){
+  scores = {X:0, O:0, D:0};
+  updateScores();
+  newRound();
+}
+
+function applyModeLabels(){
+  xLabel.textContent = vsCpu ? 'X · You' : 'X · P1';
+  oLabel.textContent = vsCpu ? 'O · CPU' : 'O · P2';
+  modeBadge.textContent = vsCpu ? `Vs computer · ${DIFF_NAMES[difficulty]}` : '2 players';
+}
+
+function setMode(cpu){
+  vsCpu = cpu;
+  homeModeCpu.classList.toggle('active', cpu);
+  homeModePvp.classList.toggle('active', !cpu);
+  homeModeCpu.setAttribute('aria-pressed', cpu);
+  homeModePvp.setAttribute('aria-pressed', !cpu);
+  homeDiffWrap.classList.toggle('off', !cpu);
+  applyModeLabels();
+}
+
+function setDifficulty(d){
+  difficulty = d;
+  [...homeDiffRow.children].forEach(b=>{
+    const on = b.dataset.d === d;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', on);
+  });
+  diffHint.textContent = DIFF_HINTS[d];
+  applyModeLabels();
+}
+
+resetRoundBtn.addEventListener('click', newRound);
+$('resetAll').addEventListener('click', resetAll);
+homeModeCpu.addEventListener('click', ()=>setMode(true));
+homeModePvp.addEventListener('click', ()=>setMode(false));
+homeDiffRow.addEventListener('click', e=>{
+  const btn = e.target.closest('button');
+  if(btn) setDifficulty(btn.dataset.d);
+});
+
+$('startBtn').addEventListener('click', ()=>{
+  homeView.classList.add('hidden');
+  gameView.classList.remove('hidden');
+  applyModeLabels();
+  resetAll();
+});
+$('backBtn').addEventListener('click', ()=>{
+  cancelCpu();
+  gameView.classList.add('hidden');
+  homeView.classList.remove('hidden');
+});
+
+setMode(true);
+setDifficulty('hard');
+render(null);
+
+/* ---- liquid glass: pointer light + ripples ---- */
+(()=>{
+  const G='.home,.panel,.cell,.score,.seg,.badge,.backBtn,.gh,.actions button,.startBtn';
+  const root=document.documentElement;
+  addEventListener('pointermove',e=>{
+    root.style.setProperty('--px',e.clientX+'px'); root.style.setProperty('--py',e.clientY+'px');
+    const el=e.target.closest&&e.target.closest(G);
+    if(el){const r=el.getBoundingClientRect(); el.style.setProperty('--mx',(e.clientX-r.left)+'px'); el.style.setProperty('--my',(e.clientY-r.top)+'px');}
+  },{passive:true});
+  addEventListener('pointerdown',e=>{
+    const el=e.target.closest&&e.target.closest('.cell:not(.filled),.seg button,.startBtn,.backBtn,.actions button');
+    if(!el) return;
+    const r=el.getBoundingClientRect(), s=document.createElement('span');
+    s.className='rip'; s.style.left=(e.clientX-r.left)+'px'; s.style.top=(e.clientY-r.top)+'px';
+    el.appendChild(s); setTimeout(()=>s.remove(),800);
+  },{passive:true});
+})();
+</script>
+</body>
+</html>
